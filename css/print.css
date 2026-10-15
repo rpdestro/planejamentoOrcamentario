@@ -1,0 +1,87 @@
+/* CSS
+ * print.css — Impressão dos Relatórios Gerenciais (carregado com media="print").
+ * Esconde navegação/controles e expande tabelas para caber na página.
+ */
+
+@page {
+  size: A4 landscape;
+  margin: 12mm;
+}
+
+body {
+  background: #fff;
+}
+
+.app-header,
+.app-nav,
+.app-footer,
+.toast-region,
+.app__skip-link,
+.page-header__actions,
+.no-print {
+  display: none !important;
+}
+
+/* Identidade institucional no topo de todo relatório impresso */
+.print-header {
+  display: flex;
+  align-items: center;
+  gap: 4mm;
+  margin-bottom: 4mm;
+  padding-bottom: 3mm;
+  border-bottom: 0.5pt solid #000;
+}
+
+.print-header__logo {
+  width: auto;
+  height: 18mm;
+}
+
+.print-header__org {
+  font-size: 13pt;
+  font-weight: 700;
+}
+
+.print-header__system {
+  font-size: 10pt;
+}
+
+.app__body {
+  display: block;
+}
+
+.app-main {
+  padding: 0;
+}
+
+.panel,
+.data-table {
+  border: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.data-table__table {
+  font-size: 9pt;
+}
+
+.data-table__th {
+  position: static;
+}
+
+.data-table__row,
+.chart-card {
+  break-inside: avoid;
+}
+
+/* Mantém as cores das barras na impressão */
+.bar-chart__bar,
+.stack-chart__segment,
+.chart-legend__swatch {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+[role="tabpanel"][hidden] {
+  display: none !important;
+}

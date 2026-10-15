@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!-- HTML
+  Executor de testes unitários no navegador (sem Node).
+  Abra este arquivo diretamente (file://) — os resultados aparecem na página
+  e em window.__resultadosTestes (para automação/QA).
+-->
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Testes — Planejamento Orçamentário</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="tests.css">
+</head>
+<body class="test-page">
+  <main class="test-page__main">
+    <h1 class="test-page__title">Testes unitários</h1>
+    <p class="test-page__summary" id="resumo" data-testid="txt-resumo-testes">Executando…</p>
+    <ol class="test-list" id="resultados" data-testid="lista-resultados-testes"></ol>
+  </main>
+
+  <!-- Módulos sob teste (mesma ordem do index.html, sem UI) -->
+  <script src="../js/core/namespace.js"></script>
+  <script src="../js/core/config.js"></script>
+  <script src="../js/core/texto.js"></script>
+  <script src="../js/core/dinheiro.js"></script>
+  <script src="../js/core/eventos.js"></script>
+  <script src="../js/domain/periodos.js"></script>
+  <script src="../js/domain/classificacao-despesa.js"></script>
+  <script src="../js/domain/classificacao-receita.js"></script>
+  <script src="../js/domain/ajustes-despesa.js"></script>
+  <script src="../js/domain/composicao-receita.js"></script>
+  <script src="../js/importers/csv-parser.js"></script>
+  <script src="../js/importers/mapeador-despesas.js"></script>
+  <script src="../js/importers/mapeador-receitas.js"></script>
+  <script src="../js/ui/tema.js"></script>
+
+  <!-- Executor + suítes -->
+  <script src="runner.js"></script>
+  <script src="unit/dinheiro.test.js"></script>
+  <script src="unit/periodos.test.js"></script>
+  <script src="unit/classificacao.test.js"></script>
+  <script src="unit/csv-parser.test.js"></script>
+  <script src="unit/mapeadores.test.js"></script>
+  <script src="unit/ajustes-despesa.test.js"></script>
+  <script src="unit/composicao-receita.test.js"></script>
+  <script src="unit/tema.test.js"></script>
+  <script src="run.js"></script>
+</body>
+</html>

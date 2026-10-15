@@ -1,0 +1,47 @@
+/* CSS
+ * tests.css — Estilo da página de resultados dos testes.
+ */
+
+.test-page__main {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: var(--esp-5);
+}
+
+.test-page__title {
+  font-size: var(--texto-xl);
+}
+
+.test-page__summary {
+  margin: var(--esp-3) 0;
+  font-weight: 600;
+}
+
+.test-page__summary--ok {
+  color: var(--cor-sucesso);
+}
+
+.test-page__summary--falha {
+  color: var(--cor-erro);
+}
+
+.test-list {
+  padding-left: var(--esp-5);
+  font-size: var(--texto-sm);
+}
+
+.test-list__item--ok {
+  color: var(--cor-sucesso);
+}
+
+.test-list__item--falha {
+  color: var(--cor-erro);
+  font-weight: 600;
+}
+
+.test-list__erro {
+  display: block;
+  font-family: var(--fonte-mono);
+  font-weight: 400;
+  white-space: pre-wrap;
+}

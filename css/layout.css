@@ -1,0 +1,327 @@
+/* CSS
+ * layout.css — Estrutura da aplicação: header, navegação lateral,
+ * área principal e rodapé. Grid no desktop; menu deslizante no celular.
+ */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app__skip-link {
+  position: absolute;
+  left: var(--esp-4);
+  top: -3rem;
+  z-index: 100;
+  padding: var(--esp-2) var(--esp-4);
+  background: var(--cor-superficie);
+  border-radius: var(--raio);
+}
+
+.app__skip-link:focus {
+  top: var(--esp-2);
+}
+
+.app__body {
+  display: grid;
+  grid-template-columns: var(--largura-nav) minmax(0, 1fr);
+  flex: 1;
+}
+
+/* Header ------------------------------------------------------------- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--esp-4);
+  min-height: var(--altura-header);
+  padding: var(--esp-2) var(--esp-5);
+  color: #fff;
+  background: var(--cor-cabecalho);
+}
+
+.app-header__brand {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--esp-3);
+  min-width: 0;
+}
+
+/* Brasão sobre "medalha" branca: o PNG é transparente e o escudo azul
+   se perderia contra o fundo azul do cabeçalho. */
+.app-header__logo {
+  flex-shrink: 0;
+  width: auto;
+  height: 44px;
+  padding: 3px;
+  border-radius: var(--raio);
+  background: #fff;
+}
+
+.app-header__brand-text {
+  min-width: 0;
+}
+
+/* Cabeçalho de impressão: só aparece no papel (ver print.css) */
+.print-header {
+  display: none;
+}
+
+.app-header__title {
+  font-size: var(--texto-lg);
+  font-weight: 600;
+}
+
+.app-header__subtitle {
+  font-size: var(--texto-sm);
+  opacity: 0.85;
+}
+
+.app-header__tools {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.app-header__label {
+  font-size: var(--texto-sm);
+}
+
+.app-header__select {
+  padding: var(--esp-1) var(--esp-2);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--raio);
+  color: var(--cor-texto);
+  background: var(--cor-superficie);
+}
+
+.app-header__version {
+  font-size: var(--texto-xs);
+  font-family: var(--fonte-mono);
+  opacity: 0.8;
+}
+
+.app-header__button {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: var(--raio);
+  font-size: var(--texto-lg);
+  line-height: 1;
+  color: #fff;
+  background: transparent;
+  cursor: pointer;
+}
+
+.app-header__button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Botão "Modo escuro": ícone + texto; o ícone indica o tema que será ativado */
+.app-header__button--tema {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--esp-1);
+  width: auto;
+  padding: 0 var(--esp-2);
+  font-size: var(--texto-sm);
+  white-space: nowrap;
+}
+
+.app-header__button--tema[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.app-header__tema-icone::before {
+  font-size: var(--texto-md);
+  content: "\263E"; /* ☾ lua: ativar escuro */
+}
+
+.app-header__button--tema[aria-pressed="true"] .app-header__tema-icone::before {
+  content: "\2600"; /* ☀ sol: voltar ao claro */
+}
+
+/* Visível também no desktop: recolhe/expande o menu lateral */
+.app-header__menu-toggle {
+  display: block;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: var(--raio);
+  background: transparent;
+  cursor: pointer;
+}
+
+.app-header__menu-icon,
+.app-header__menu-icon::before,
+.app-header__menu-icon::after {
+  display: block;
+  width: 1.25rem;
+  height: 2px;
+  margin: 0 auto;
+  background: #fff;
+  content: "";
+}
+
+.app-header__menu-icon::before {
+  transform: translateY(-6px);
+}
+
+.app-header__menu-icon::after {
+  transform: translateY(4px);
+}
+
+/* Navegação ---------------------------------------------------------- */
+.app-nav {
+  position: sticky;
+  top: var(--altura-header);
+  align-self: start;
+  max-height: calc(100vh - var(--altura-header));
+  overflow-y: auto;
+  padding: var(--esp-4) var(--esp-3);
+  border-right: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+}
+
+.app-nav__group + .app-nav__group {
+  margin-top: var(--esp-4);
+}
+
+.app-nav__group-title {
+  padding: 0 var(--esp-2) var(--esp-1);
+  font-size: var(--texto-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cor-texto-suave);
+}
+
+.app-nav__link {
+  display: block;
+  padding: var(--esp-1) var(--esp-2);
+  border-radius: var(--raio);
+  font-size: var(--texto-sm);
+  color: var(--cor-texto);
+  text-decoration: none;
+}
+
+.app-nav__link:hover {
+  background: var(--cor-primaria-clara);
+}
+
+.app-nav__link--active {
+  font-weight: 600;
+  color: var(--cor-destaque-texto-forte);
+  background: var(--cor-primaria-clara);
+}
+
+/* Menu recolhido (desktop): a área principal ocupa toda a largura */
+.app--nav-collapsed .app__body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app--nav-collapsed .app-nav {
+  display: none;
+}
+
+/* Principal e rodapé ------------------------------------------------- */
+.app-main {
+  min-width: 0;
+  padding: var(--esp-5);
+}
+
+.app-main:focus {
+  outline: none;
+}
+
+.app-main > * + *,
+.stack > * + * {
+  margin-top: var(--esp-4);
+}
+
+.app-footer {
+  padding: var(--esp-3) var(--esp-5);
+  border-top: 1px solid var(--cor-borda);
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
+  background: var(--cor-superficie);
+}
+
+/* Grade auxiliar */
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: var(--esp-4);
+}
+
+/* Responsivo --------------------------------------------------------- */
+@media (max-width: 860px) {
+  .app__body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-header {
+    padding: var(--esp-2) var(--esp-4);
+  }
+
+  .app--nav-collapsed .app-nav {
+    display: block;
+  }
+
+  .app-header__subtitle,
+  .app-header__version {
+    display: none;
+  }
+
+  .app-header__logo {
+    height: 34px;
+  }
+
+  /* No celular o botão de tema fica só com o ícone (rótulo segue acessível) */
+  .app-header__tema-texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .app-header__button--tema {
+    width: 2rem;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .app-nav {
+    position: fixed;
+    top: var(--altura-header);
+    left: 0;
+    bottom: 0;
+    z-index: 15;
+    width: min(85vw, var(--largura-nav));
+    max-height: none;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: var(--sombra);
+  }
+
+  .app-nav--open {
+    transform: translateX(0);
+  }
+
+  .app-main {
+    padding: var(--esp-4);
+  }
+
+  .grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
