@@ -131,38 +131,14 @@ As composições ficam em `js/domain/composicao-receita.js`, como uma lista de *
 Cada subgrupo inclui o item **"Demais"**, com o que não foi detalhado (ex.: IRRF nas Tributárias). Assim os gráficos sempre fecham com o total oficial.
 
 Seções: 1. Receitas Correntes · 2. Receitas de Capital · 3. Intraorçamentárias · 4. Deduções FUNDEB · 5. Orçamento Geral (receita bruta, deduções, receita líquida, despesa fixada, equilíbrio, dependência de transferências, despesa por categoria, função, GND, órgão e fonte) · 6. Orçamento por Grupo de Receita e Despesa (origem × aplicação, com escala comum e verificação de equilíbrio).
-
 ---
 
-## Verificação com os arquivos reais (v0.1.1)
+## 👨‍💻 Autor:
+```text
+Renato Pinheiro Destro
+renato.destro@gmail.com
+Auxiliar de Escritório / Prefeitura Municipal de Botucatu/SP
+```
+#### Seja LIVRE, use Linux!
 
-| Arquivo | Resultado |
-|---|---|
-| Cronograma 2027 | 1.339 dotações. Total **R$ 996.263.686,69**, igual ao somatório da própria planilha. 77 não diluídas, 254 com divergência mensal. |
-| Receitas Fiorilli | 444 linhas, sendo 249 analíticas. Receita líquida: 2026 R$ 893.477.500,00 · **2027 R$ 946.549.500,00** · 2028 R$ 1.004.230.000,00 · 2029 R$ 1.065.193.100,00. |
-
-O saldo do exercício 2027 (receita − despesa) é **−R$ 49.714.186,69**.
-
-**Pontos de atenção na origem (para a equipe de orçamento):**
-- 254 dotações têm cronograma mensal diferente do total, com diferença líquida de R$ 2,18 bi. Exemplo: linha 321 (02.04, 3.3.90.32) com R$ 223.848.389,38 em março, contra um total anual de R$ 2.238.483,83, o que parece vírgula deslocada.
-- O CSV de receitas traz duas linhas `1000.00.0.0.00.00 RECEITAS CORRENTES` (na coluna de 2026: R$ 22,17 mi e R$ 893,78 mi). A soma das analíticas (R$ 915,95 mi) confirma que os dois valores são partes de um mesmo total.
-
----
-
-## Pendências e próximos passos
-
-- [x] Nomes das 21 Secretarias e dos órgãos 01.01 e 03.01 (`js/core/config.js`, lista `orgaos`).
-- [x] Anos das colunas `VLRn_CALC` do arquivo do Fiorilli.
-- [x] Adicionar/Alterar/Excluir dotações, busca rápida, relatório por Secretaria, Gráficos, cadastro de exercícios (v0.2.0).
-- [x] Tela de consulta da trilha de auditoria (lista de ajustes por Secretaria) e reaplicação de inclusões manuais após reimportação (v0.3.0).
-- [ ] Consulta dos ajustes de importações substituídas (hoje a aba mostra só a importação ativa).
-- [ ] Classificar as receitas como **temporais e atemporais**.
-- [ ] Importador `.xml` no padrão TCE-SP/AUDESP (ponto de extensão: `leitor-planilha.js`).
-- [ ] Skills do CLAUDE.md: validador LRF, PPA/LDO/LOA, motor de projeções etc.
-- [ ] Controle de versão com Git (arquivos `.gitignore` e `.gitattributes` já preparados).
-
----
-
-## Versionamento
-
-O projeto segue o **SemVer** (`MAJOR.MINOR.PATCH`). A versão aparece no cabeçalho da aplicação (`PO.versao` em `js/core/namespace.js`) e no arquivo `VERSION`. Os dois devem ser atualizados juntos, com uma entrada no `CHANGELOG.md`.
+##
