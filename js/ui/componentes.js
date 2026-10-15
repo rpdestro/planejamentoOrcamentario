@@ -41,10 +41,19 @@
   /**
    * Selo de status.
    * @param {string} texto
-   * @param {'ok'|'alerta'|'erro'|'neutro'} variante
+   * @param {'ok'|'alerta'|'erro'|'info'|'neutro'} variante
    */
   function selo(texto, variante) {
     return h('span', { className: 'badge badge--' + (variante || 'neutro'), text: texto });
+  }
+
+  /**
+   * Selo da coluna H "Valor insuficiente": Negativo (vermelho), Atende (azul)
+   * ou Positivo (verde), conforme domain/valor-insuficiente.js.
+   * @param {{situacao:{rotulo:string, variante:string}}} calculo resultado de valorInsuficiente.calcular()
+   */
+  function seloValorInsuficiente(calculo) {
+    return selo(calculo.situacao.rotulo, calculo.situacao.variante);
   }
 
   /**
@@ -273,6 +282,7 @@
     cabecalhoPagina: cabecalhoPagina,
     cartaoKpi: cartaoKpi,
     selo: selo,
+    seloValorInsuficiente: seloValorInsuficiente,
     tabela: tabela,
     campo: campo,
     definirErro: definirErro,

@@ -23,7 +23,7 @@
 
   global.PO = {
     /** Versão semântica da aplicação (manter em sincronia com o arquivo VERSION). */
-    versao: '0.5.0',
+    versao: '0.6.1',
     core: {},
     domain: {},
     data: {},

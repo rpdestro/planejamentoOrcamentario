@@ -171,6 +171,12 @@ select {
 }
 
 /* Utilitários */
+
+/* Garante que o atributo `hidden` vença regras de display de componentes (ex.: .btn) */
+[hidden] {
+  display: none !important;
+}
+
 .u-visually-hidden {
   position: absolute !important;
   width: 1px;

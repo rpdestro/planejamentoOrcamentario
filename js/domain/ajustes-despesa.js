@@ -57,7 +57,8 @@
       totalCentavos: dados.totalCentavos,
       mesesCentavos: meses,
       diluida: meses !== null,
-      divergenciaCentavos: meses ? dinheiro.somar(meses) - dados.totalCentavos : 0
+      divergenciaCentavos: meses ? dinheiro.somar(meses) - dados.totalCentavos : 0,
+      insuficienteCentavos: PO.domain.valorInsuficiente.calcular({ totalCentavos: dados.totalCentavos, mesesCentavos: meses }).saldoCentavos
     };
   }
 
@@ -95,7 +96,7 @@
   function aplicarUm(mapa, a) {
     if (a.operacao === OPERACOES.inclusao) {
       var chave = 'm' + a.id;
-      mapa.set(chave, Object.assign({ exercicio: a.exercicio, uo: a.uo, linhaOrigem: null, insuficienteCentavos: 0 },
+      mapa.set(chave, Object.assign({ exercicio: a.exercicio, uo: a.uo, linhaOrigem: null },
         camposDerivados(a.dados), { chave: chave, origem: 'manual', alterada: false }));
     } else if (a.operacao === OPERACOES.alteracao && mapa.has(a.alvo)) {
       mapa.set(a.alvo, Object.assign({}, mapa.get(a.alvo), camposDerivados(a.dados), { alterada: true }));

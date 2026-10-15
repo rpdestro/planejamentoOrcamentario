@@ -11,6 +11,9 @@
  *   - Histórico de ajustes: trilha de auditoria (somente leitura) das
  *     inclusões/alterações/anulações da UO, com valor antes/depois e motivo.
  *
+ * A coluna "Valor insuficiente" (coluna H do cronograma) traz total − meses
+ * e o indicador Negativo (vermelho) / Atende (azul) / Positivo (verde).
+ *
  * No período "Mensal" a tabela usa o modo compacto (classificação empilhada
  * em uma coluna, valores sem "R$") para exibir as 12 colunas sem rolagem.
  */
@@ -92,6 +95,18 @@
     return h('span', { className: 'badge-stack' }, selos);
   }
 
+  /**
+   * Célula da coluna H "Valor insuficiente" (total − soma dos meses): valor em
+   * cima e indicador Negativo/Atende/Positivo embaixo (domain/valor-insuficiente.js).
+   */
+  function celulaValorInsuficiente(r, fmt) {
+    var calc = PO.domain.valorInsuficiente.calcular(r);
+    return h('span', { className: 'cell-stack cell-stack--num', testid: 'celula-valor-insuficiente' }, [
+      h('span', { text: fmt(calc.saldoCentavos) }),
+      c.seloValorInsuficiente(calc)
+    ]);
+  }
+
   /** Botões de ação da linha (ícone + rótulo acessível). */
   function acoes(r, aoAlterar, aoExcluir) {
     var id = texto.slug(r.chave);
@@ -141,9 +156,10 @@
       ? rotulos.slice(0, 6).map(function (r, i) { return { titulo: r + ' / ' + rotulos[i + 6], numerica: true }; })
       : rotulos.map(function (r) { return { titulo: r, numerica: true }; });
     var celulasPeriodo = empilhar ? function (v) { return empilharSemestres(v, fmt); } : function (v) { return v.map(fmt); };
+    var colunaH = { titulo: compacta ? 'Valor insuf.' : 'Valor insuficiente', numerica: true };
     var colunasFixas = compacta
-      ? [{ titulo: 'Classificação' }, { titulo: 'Descrição' }, { titulo: 'Total', numerica: true }]
-      : [{ titulo: 'U. Executora' }, { titulo: 'Funcional' }, { titulo: 'Natureza' }, { titulo: 'Descrição' }, { titulo: 'Fonte' }, { titulo: 'Total', numerica: true }];
+      ? [{ titulo: 'Classificação' }, { titulo: 'Descrição' }, { titulo: 'Total', numerica: true }, colunaH]
+      : [{ titulo: 'U. Executora' }, { titulo: 'Funcional' }, { titulo: 'Natureza' }, { titulo: 'Descrição' }, { titulo: 'Fonte' }, { titulo: 'Total', numerica: true }, colunaH];
     var colunas = colunasFixas.concat(colunasPeriodo).concat([{ titulo: 'Situação' }, { titulo: 'Ações' }]);
 
     var linhas = registros.map(function (r) {
@@ -151,13 +167,15 @@
       var fixas = compacta
         ? [celulaClassificacao(r), h('span', { className: 'cell-desc', text: r.descricao }), fmt(r.totalCentavos)]
         : [r.ue, r.funcional, r.natureza, r.descricao, r.fonte, fmt(r.totalCentavos)];
-      return fixas.concat(celulasPeriodo(valores)).concat([situacao(r), acoes(r, manipuladores.aoAlterar, manipuladores.aoExcluir)]);
+      return fixas.concat([celulaValorInsuficiente(r, fmt)]).concat(celulasPeriodo(valores))
+        .concat([situacao(r), acoes(r, manipuladores.aoAlterar, manipuladores.aoExcluir)]);
     });
 
     var somaPeriodos = periodos.agregar(periodos.somarMeses(registros), chavePeriodo);
     var total = dinheiro.somar(registros.map(function (r) { return r.totalCentavos; }));
+    var saldoH = PO.domain.valorInsuficiente.resumir(registros).saldoCentavos;
     var vazias = compacta ? ['', 'Total (' + registros.length + ')'] : ['', '', '', 'Total (' + registros.length + ')', ''];
-    var rodape = vazias.concat([fmt(total)]).concat(celulasPeriodo(somaPeriodos)).concat(['', '']);
+    var rodape = vazias.concat([fmt(total), fmt(saldoH)]).concat(celulasPeriodo(somaPeriodos)).concat(['', '']);
 
     return c.tabela({
       colunas: colunas,

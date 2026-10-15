@@ -47,6 +47,7 @@
         link('Receitas', '#/receitas', 'nav-receitas'),
         link('Relatórios de Projeção', '#/relatorios', 'nav-relatorios'),
         link('Exportar', '#/exportar', 'nav-exportar'),
+        link('Base Excel', '#/base-excel', 'nav-base-excel'),
         link('Importar planilhas', '#/importar', 'nav-importar')
       ], 'nav-grupo-geral'),
       grupo('Secretarias (' + secretarias.length + ')', secretarias.map(linkOrgao), 'nav-grupo-secretarias'),

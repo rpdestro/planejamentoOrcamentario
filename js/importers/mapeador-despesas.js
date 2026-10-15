@@ -15,6 +15,8 @@
  *   - Valor total vazio/inválido ⇒ importado como 0,00, com aviso (nada é descartado em silêncio).
  *   - Meses todos vazios ⇒ dotação "não diluída" (mesesCentavos = null).
  *   - Soma mensal ≠ total ⇒ aviso de divergência (o registro é importado).
+ *   - Coluna H "valor insuficiente" é CALCULADA (total − soma dos meses),
+ *     ver domain/valor-insuficiente.js.
  */
 (function (PO) {
   'use strict';
@@ -142,7 +144,8 @@
       naoDiluidas: naoDiluidas,
       divergentes: divergentes,
       totalCentavos: total,
-      anoCabecalho: mapa.anoCabecalho
+      anoCabecalho: mapa.anoCabecalho,
+      valorInsuficiente: PO.domain.valorInsuficiente.resumir(resultado.registros)
     };
     return resultado;
   }
@@ -225,7 +228,9 @@
       descricao: texto.celula(valor(linha, idx.descricao)),
       fonte: fonte,
       totalCentavos: totalCentavos,
-      insuficienteCentavos: dinheiro.paraCentavos(valor(linha, idx.insuficiente), { vazioComoZero: true }) || 0,
+      // Coluna H calculada (total − diluído): o valor da planilha é ignorado
+      // para que a conferência nunca dependa de fórmula desatualizada no Excel.
+      insuficienteCentavos: PO.domain.valorInsuficiente.calcular({ totalCentavos: totalCentavos, mesesCentavos: meses }).saldoCentavos,
       mesesCentavos: meses,
       diluida: diluida,
       divergenciaCentavos: divergencia

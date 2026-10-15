@@ -70,6 +70,48 @@
     return { elemento: elemento, reaplicar: function () { return Boolean(opcao && opcao.checked); } };
   }
 
+  /**
+   * Conferência do cronograma de despesas (colunas A–H da planilha) com o
+   * indicador da coluna H "Valor insuficiente" (Negativo / Atende / Positivo).
+   * Um filtro por situação ajuda a localizar rapidamente as linhas negativas.
+   * @param {Array} registros registros mapeados da prévia
+   */
+  function blocoValorInsuficiente(registros) {
+    var vi = PO.domain.valorInsuficiente;
+    var calculados = registros.map(function (r) { return { r: r, calc: vi.calcular(r) }; });
+    var filtro = c.select([{ valor: '', rotulo: 'Todas as situações' }].concat(Object.keys(vi.SITUACOES).map(function (k) {
+      return { valor: k, rotulo: vi.SITUACOES[k].rotulo };
+    })), 'select-filtro-valor-insuficiente');
+    var alvo = h('div');
+
+    function desenhar() {
+      var lista = calculados.filter(function (x) { return !filtro.value || x.calc.situacao.chave === filtro.value; });
+      PO.core.dom.limpar(alvo);
+      alvo.appendChild(c.tabela({
+        colunas: [{ titulo: 'Linha', numerica: true }, { titulo: 'U. Orçamentária' }, { titulo: 'U. Executora' }, { titulo: 'Funcional' },
+          { titulo: 'Natureza' }, { titulo: 'Descrição' }, { titulo: 'Fonte' }, { titulo: 'Valor total', numerica: true },
+          { titulo: 'Planejado (meses)', numerica: true }, { titulo: 'Valor insuficiente', numerica: true }, { titulo: 'Situação' }],
+        linhas: lista.map(function (x) {
+          return [String(x.r.linhaOrigem), x.r.uo, x.r.ue, x.r.funcional, x.r.natureza, h('span', { className: 'cell-desc', text: x.r.descricao }),
+            x.r.fonte, c.moeda(x.r.totalCentavos), c.moeda(x.calc.diluidoCentavos), c.moeda(x.calc.saldoCentavos), c.seloValorInsuficiente(x.calc)];
+        }),
+        legenda: 'Conferência da coluna H — valor insuficiente por dotação',
+        testid: 'tabela-valor-insuficiente',
+        vazio: 'Nenhuma dotação nesta situação.',
+        compacta: true
+      }));
+    }
+    filtro.addEventListener('change', desenhar);
+    desenhar();
+
+    return h('details', { className: 'conferencia', testid: 'previa-valor-insuficiente' }, [
+      h('summary', { className: 'conferencia__summary', text: 'Conferência da coluna H — Valor insuficiente (' + registros.length + ' dotações)' }),
+      h('p', { className: 'conferencia__hint', text: 'Valor insuficiente = Valor total − soma dos meses. Negativo: o planejado mensal ultrapassa a dotação · Atende: fecha exatamente · Positivo: sobra dotação não diluída.' }),
+      c.campo({ id: 'imp-filtro-vi', rotulo: 'Situação', controle: filtro }),
+      alvo
+    ]);
+  }
+
   /** Bloco de prévia (resumo + avisos + ações). */
   function blocoPrevia(previa, aoConfirmar, aoCancelar, avisoSubstituicao) {
     var r = previa.resumo || {};
@@ -83,6 +125,12 @@
       itensResumo.push(['Total fixado', c.moeda(r.totalCentavos)]);
       itensResumo.push(['Não diluídas', String(r.naoDiluidas)]);
       itensResumo.push(['Com divergência mensal', String(r.divergentes)]);
+    }
+    if (previa.tipo === 'despesas' && r.valorInsuficiente) {
+      var vi = r.valorInsuficiente;
+      itensResumo.push(['Valor insuficiente — Negativo', h('span', { className: 'badge-stack' }, [c.selo(String(vi.negativo), 'erro'), ' falta ' + c.moeda(vi.faltaCentavos)])]);
+      itensResumo.push(['Valor insuficiente — Atende', c.selo(String(vi.atende), 'info')]);
+      itensResumo.push(['Valor insuficiente — Positivo', c.selo(String(vi.positivo), 'ok')]);
     }
     if (previa.tipo === 'receitas' && r.anos) {
       r.anos.forEach(function (ano) {
@@ -114,11 +162,14 @@
       h('dl', { className: 'summary-list' }, itensResumo.map(function (par) {
         return h('div', { className: 'summary-list__item' }, [
           h('dt', { className: 'summary-list__term', text: par[0] }),
-          h('dd', { className: 'summary-list__value', text: par[1] })
+          typeof par[1] === 'string'
+            ? h('dd', { className: 'summary-list__value', text: par[1] })
+            : h('dd', { className: 'summary-list__value' }, par[1])
         ]);
       })),
       erros,
       avisos,
+      previa.tipo === 'despesas' && previa.registros.length ? blocoValorInsuficiente(previa.registros) : null,
       previa.valida ? avisoSubstituicao : null,
       h('div', { className: 'form-actions' }, [
         previa.valida ? c.botao('Confirmar e gravar', 'btn-confirmar-importacao', aoConfirmar) : null,

@@ -134,6 +134,12 @@
   background: var(--cor-neutro-fundo);
 }
 
+/* Azul informativo — usado pelo indicador "Atende" da coluna Valor insuficiente */
+.badge--info {
+  color: var(--cor-destaque-texto-forte);
+  background: var(--cor-primaria-clara);
+}
+
 /* Tabela de dados ---------------------------------------------------- */
 .data-table {
   max-width: 100%;
@@ -365,6 +371,37 @@
 .warnings__more {
   margin-top: var(--esp-2);
   font-size: var(--texto-xs);
+}
+
+/* Conferência (bloco recolhível com tabela, ex.: coluna H da importação) */
+.conferencia {
+  margin-top: var(--esp-3);
+  padding: var(--esp-3) var(--esp-4);
+  border-left: 4px solid var(--cor-destaque-texto);
+  border-radius: var(--raio);
+  background: var(--cor-primaria-clara);
+}
+
+.conferencia__summary {
+  font-weight: 600;
+  color: var(--cor-destaque-texto-forte);
+  cursor: pointer;
+}
+
+.conferencia__hint {
+  margin: var(--esp-2) 0;
+  font-size: var(--texto-sm);
+}
+
+.conferencia .form-field {
+  max-width: 16rem;
+  margin-bottom: var(--esp-2);
+}
+
+.conferencia .data-table {
+  max-height: 28rem;
+  overflow-y: auto;
+  background: var(--cor-superficie);
 }
 
 /* Lista de resumo ---------------------------------------------------- */

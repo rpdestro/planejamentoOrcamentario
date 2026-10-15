@@ -104,7 +104,8 @@
       receitas: PO.ui.views.receitas,
       importar: PO.ui.views.importar,
       relatorios: PO.ui.views.relatorios,
-      exportar: PO.ui.views.exportar
+      exportar: PO.ui.views.exportar,
+      'base-excel': PO.ui.views.baseExcel
     };
     Object.keys(rotas).forEach(function (nome) {
       PO.ui.roteador.registrar(nome, rotas[nome]);
