@@ -130,7 +130,8 @@ A ordem das camadas é **core → domain → data → importers → ui → app**
 As composições ficam em `js/domain/composicao-receita.js`, como uma lista de **rótulo + prefixo(s) da natureza de receita**. Para mudar um item, basta editar essa lista. Exemplos: IPTU `1112.50`, ISS `1114.51`, FPM `1711.51`, SUS `1713` + `1723`, SUAS `1716` + `1729.51`, Comprev `1999.03`, Repasse Sabesp `1999.99.2.1.01`.
 Cada subgrupo inclui o item **"Demais"**, com o que não foi detalhado (ex.: IRRF nas Tributárias). Assim os gráficos sempre fecham com o total oficial.
 
-Seções: 1. Receitas Correntes · 2. Receitas de Capital · 3. Intraorçamentárias · 4. Deduções FUNDEB · 5. Orçamento Geral (receita bruta, deduções, receita líquida, despesa fixada, equilíbrio, dependência de transferências, despesa por categoria, função, GND, órgão e fonte) · 6. Orçamento por Grupo de Receita e Despesa (origem × aplicação, com escala comum e verificação de equilíbrio).
+Seções:
+1. Receitas Correntes · 2. Receitas de Capital · 3. Intraorçamentárias · 4. Deduções FUNDEB · 5. Orçamento Geral (receita bruta, deduções, receita líquida, despesa fixada, equilíbrio, dependência de transferências, despesa por categoria, função, GND, órgão e fonte) · 6. Orçamento por Grupo de Receita e Despesa (origem × aplicação, com escala comum e verificação de equilíbrio).
 ---
 
 ## 👨‍💻 Autor:
