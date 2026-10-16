@@ -59,7 +59,7 @@
   /**
    * Tabela de dados. Colunas com `numerica: true` são alinhadas à direita.
    * @param {{
-   *   colunas: Array<{titulo:string, numerica?:boolean}>,
+   *   colunas: Array<{titulo:string, numerica?:boolean, classe?:string}>,  // classe: extra em th/td da coluna
    *   linhas: Array<Array<string|Node>>,
    *   rodape?: Array<string|Node>,
    *   legenda: string,
@@ -69,9 +69,12 @@
    * }} p
    */
   function tabela(p) {
+    function classeTd(col) {
+      return 'data-table__td' + (col.numerica ? ' data-table__td--num' : '') + (col.classe ? ' ' + col.classe : '');
+    }
     var thead = h('thead', null, h('tr', null, p.colunas.map(function (c) {
       return h('th', {
-        className: 'data-table__th' + (c.numerica ? ' data-table__th--num' : ''),
+        className: 'data-table__th' + (c.numerica ? ' data-table__th--num' : '') + (c.classe ? ' ' + c.classe : ''),
         text: c.titulo,
         attrs: { scope: 'col' }
       });
@@ -80,7 +83,7 @@
     var corpo = p.linhas.length
       ? p.linhas.map(function (linha) {
           return h('tr', { className: 'data-table__row' }, linha.map(function (celula, i) {
-            return h('td', { className: 'data-table__td' + (p.colunas[i].numerica ? ' data-table__td--num' : '') }, celula);
+            return h('td', { className: classeTd(p.colunas[i]) }, celula);
           }));
         })
       : [h('tr', null, h('td', {
@@ -91,7 +94,7 @@
 
     var tfoot = p.rodape && p.linhas.length
       ? h('tfoot', null, h('tr', { className: 'data-table__foot' }, p.rodape.map(function (celula, i) {
-          return h('td', { className: 'data-table__td' + (p.colunas[i].numerica ? ' data-table__td--num' : '') }, celula);
+          return h('td', { className: classeTd(p.colunas[i]) }, celula);
         })))
       : null;
 

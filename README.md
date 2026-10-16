@@ -1,6 +1,6 @@
 # Planejamento Orçamentário — Prefeitura Municipal de Botucatu
 
-**Versão:** 0.5.0 (ver [`VERSION`](VERSION) e [`CHANGELOG.md`](CHANGELOG.md))
+**Versão:** 0.7.2 (ver [`VERSION`](VERSION) e [`CHANGELOG.md`](CHANGELOG.md))
 
 Ferramenta web para o planejamento orçamentário municipal. Ela importa as planilhas oficiais (cronograma de despesas e receitas do Fiorilli), distribui as despesas por período e oferece um painel, telas por Secretaria, relatórios de projeção e exportação.
 
@@ -15,7 +15,7 @@ Toda a aplicação é **HTML + CSS + JavaScript puros**, sem servidor, sem Node 
    - **Despesas**: `2027 - cronograma de orçamento.xlsx`. Informe o ano 2027.
    - **Receitas**: `FONTES DE FINANCIAMENTO DOS PROGRAMAS GOVERNAMENTAIS CONSOLIDADO.csv`. O ano já vem preenchido com o ano da 1ª coluna de valor, que é o ano anterior ao exercício. No arquivo atual: `VLR6_CALC`=2026, `VLR7_CALC`=2027, `VLR8_CALC`=2028, `VLR9_CALC`=2029.
 3. Confira a prévia (resumo, erros e avisos) e clique em **Confirmar e gravar**.
-4. Navegue pelo **Painel**, pelos **Gráficos**, por **Receitas**, pelos **Relatórios**, por **Exportar** e pelas **Secretarias**.
+4. Navegue pelo **Painel**, pelos **Gráficos**, por **Receitas**, pelos **Relatórios**, por **Exportar**, pela **Base Excel** e pelas **Secretarias**.
 
 ### Telas das Secretarias
 
@@ -29,6 +29,29 @@ Toda a aplicação é **HTML + CSS + JavaScript puros**, sem servidor, sem Node 
 ### Reimportação de despesas com ajustes
 
 Os ajustes ficam vinculados à importação ativa. Ao reimportar o cronograma do mesmo exercício, a prévia avisa quantos ajustes deixarão de valer e oferece **reaplicar as inclusões manuais vigentes** no novo lote, como novos ajustes que apontam para o original. Alterações e anulações de dotações importadas não são reaplicadas: confira se a nova planilha já traz essas correções. Nada é apagado; os ajustes do lote anterior continuam gravados.
+
+### Coluna H — Valor insuficiente (importação de despesas)
+
+Na prévia de **Despesas (Cronograma de Orçamento)**, a coluna H é calculada pelo sistema:
+**valor insuficiente = valor total − soma dos meses (jan…dez)**. O valor digitado na planilha é ignorado, para não depender de fórmula desatualizada. Cada dotação recebe um indicador, no mesmo padrão de selos da coluna "Situação":
+
+| Indicador | Cor | Significado |
+|---|---|---|
+| **Negativo** | vermelho | O planejado mensal ultrapassa o valor total (falta dotação). |
+| **Atende** | azul | O planejado mensal fecha exatamente com o valor total. |
+| **Positivo** | verde | Sobra dotação ainda não diluída nos meses (inclui dotações sem cronograma). |
+
+O resumo da prévia mostra a contagem de cada situação e quanto falta no total; o bloco **"Conferência da coluna H"** lista as dotações (colunas A–H + indicador) com filtro por situação. Inclusões e alterações feitas no sistema recalculam a coluna H automaticamente. A mesma coluna, com o indicador, aparece na tabela **Dotações** de cada Secretaria, ao lado do Total.
+
+### Base Excel
+
+Menu **Base Excel** → **Gerar base Excel**: gera uma planilha `.xlsx` com as dotações efetivas do exercício (lote importado + inclusões, alterações e anulações feitas no sistema), no **mesmo layout de colunas** da planilha "Despesas (Cronograma de Orçamento)" (A–T).
+
+- Aba **Cronograma**: as dotações. A coluna H sai como fórmula (`=G − SOMA(I:T)`), então o Excel recalcula se a planilha for editada.
+- Aba **Ajustes**: trilha de auditoria das modificações. Aba **Informações**: exercício, arquivo de origem, data e totais.
+- No **Chrome/Edge**, o sistema pergunta onde salvar e deixa o arquivo **vinculado** durante a sessão: depois de novas modificações, **Salvar modificações na base** regrava o mesmo arquivo. Em outros navegadores, a base é baixada para a pasta Downloads.
+- A tela avisa quando há modificações no sistema que ainda não foram salvas na base.
+- Para restaurar a base (outro navegador ou computador), importe o arquivo em **Importar planilhas → Despesas**. As modificações passam a fazer parte do novo lote.
 
 ### Novo exercício
 
@@ -68,11 +91,13 @@ planejamentoOrcamentario/
 │   │   ├── periodos.js         # mensal/bimestral/trimestral/quadrimestral/anual
 │   │   ├── classificacao-despesa.js   # natureza C.G.MM.EE e funcional
 │   │   ├── classificacao-receita.js   # hierarquia da natureza de receita
+│   │   ├── valor-insuficiente.js  # coluna H: total − meses → Negativo/Atende/Positivo
 │   │   ├── ajustes-despesa.js  # inclusão/alteração/anulação auditáveis de dotações
 │   │   └── composicao-receita.js      # agrupamentos dos Gráficos e quadro PLOA (configurável)
 │   ├── data/
 │   │   ├── db.js               # IndexedDB (gravação atômica de lotes)
-│   │   └── repositorio.js      # acesso a dados por domínio, lote ativo
+│   │   ├── repositorio.js      # acesso a dados por domínio, lote ativo
+│   │   └── base-excel.js       # monta a Base Excel (layout do Cronograma + Ajustes + Informações)
 │   ├── importers/
 │   │   ├── csv-parser.js       # CSV tolerante ao padrão Fiorilli, UTF-8/ANSI
 │   │   ├── leitor-planilha.js  # .csv/.xls/.xlsx → tabela uniforme (+ .xml futuro)
@@ -86,7 +111,7 @@ planejamentoOrcamentario/
 │   │   ├── formulario-dotacao.js      # diálogos Adicionar/Alterar/Excluir
 │   │   ├── tema.js             # modo claro/escuro (carregado no <head>, evita "piscar")
 │   │   ├── notificador.js · roteador.js · navegacao.js
-│   │   └── views/              # painel, graficos, secretaria, receitas, importar, relatorios, exportar
+│   │   └── views/              # painel, graficos, secretaria, receitas, importar, relatorios, exportar, base-excel
 │   └── app.js                  # bootstrap
 ├── tests/                      # executor no navegador + suítes unitárias
 ├── vendor/                     # bibliotecas de terceiros (opcional, ver acima)
@@ -130,16 +155,39 @@ A ordem das camadas é **core → domain → data → importers → ui → app**
 As composições ficam em `js/domain/composicao-receita.js`, como uma lista de **rótulo + prefixo(s) da natureza de receita**. Para mudar um item, basta editar essa lista. Exemplos: IPTU `1112.50`, ISS `1114.51`, FPM `1711.51`, SUS `1713` + `1723`, SUAS `1716` + `1729.51`, Comprev `1999.03`, Repasse Sabesp `1999.99.2.1.01`.
 Cada subgrupo inclui o item **"Demais"**, com o que não foi detalhado (ex.: IRRF nas Tributárias). Assim os gráficos sempre fecham com o total oficial.
 
-**Seções**
-1. Receitas Correntes · 2. Receitas de Capital · 3. Intraorçamentárias · 4. Deduções FUNDEB · 5. Orçamento Geral (receita bruta, deduções, receita líquida, despesa fixada, equilíbrio, dependência de transferências, despesa por categoria, função, GND, órgão e fonte) · 6. Orçamento por Grupo de Receita e Despesa (origem × aplicação, com escala comum e verificação de equilíbrio).
+Seções: 1. Receitas Correntes · 2. Receitas de Capital · 3. Intraorçamentárias · 4. Deduções FUNDEB · 5. Orçamento Geral (receita bruta, deduções, receita líquida, despesa fixada, equilíbrio, dependência de transferências, despesa por categoria, função, GND, órgão e fonte) · 6. Orçamento por Grupo de Receita e Despesa (origem × aplicação, com escala comum e verificação de equilíbrio).
+
 ---
 
-## 👨‍💻 Autor:
-```text
-Renato Pinheiro Destro
-renato.destro@gmail.com
-Auxiliar de Escritório / Prefeitura Municipal de Botucatu/SP
-```
-#### Seja LIVRE, use Linux!
+## Verificação com os arquivos reais (v0.1.1)
 
-##
+| Arquivo | Resultado |
+|---|---|
+| Cronograma 2027 | 1.339 dotações. Total **R$ 996.263.686,69**, igual ao somatório da própria planilha. 77 não diluídas, 254 com divergência mensal. |
+| Receitas Fiorilli | 444 linhas, sendo 249 analíticas. Receita líquida: 2026 R$ 893.477.500,00 · **2027 R$ 946.549.500,00** · 2028 R$ 1.004.230.000,00 · 2029 R$ 1.065.193.100,00. |
+
+O saldo do exercício 2027 (receita − despesa) é **−R$ 49.714.186,69**.
+
+**Pontos de atenção na origem (para a equipe de orçamento):**
+- 254 dotações têm cronograma mensal diferente do total, com diferença líquida de R$ 2,18 bi. Exemplo: linha 321 (02.04, 3.3.90.32) com R$ 223.848.389,38 em março, contra um total anual de R$ 2.238.483,83, o que parece vírgula deslocada.
+- O CSV de receitas traz duas linhas `1000.00.0.0.00.00 RECEITAS CORRENTES` (na coluna de 2026: R$ 22,17 mi e R$ 893,78 mi). A soma das analíticas (R$ 915,95 mi) confirma que os dois valores são partes de um mesmo total.
+
+---
+
+## Pendências e próximos passos
+
+- [x] Nomes das 21 Secretarias e dos órgãos 01.01 e 03.01 (`js/core/config.js`, lista `orgaos`).
+- [x] Anos das colunas `VLRn_CALC` do arquivo do Fiorilli.
+- [x] Adicionar/Alterar/Excluir dotações, busca rápida, relatório por Secretaria, Gráficos, cadastro de exercícios (v0.2.0).
+- [x] Tela de consulta da trilha de auditoria (lista de ajustes por Secretaria) e reaplicação de inclusões manuais após reimportação (v0.3.0).
+- [ ] Consulta dos ajustes de importações substituídas (hoje a aba mostra só a importação ativa).
+- [ ] Classificar as receitas como **temporais e atemporais**.
+- [ ] Importador `.xml` no padrão TCE-SP/AUDESP (ponto de extensão: `leitor-planilha.js`).
+- [ ] Skills do CLAUDE.md: validador LRF, PPA/LDO/LOA, motor de projeções etc.
+- [ ] Controle de versão com Git (arquivos `.gitignore` e `.gitattributes` já preparados).
+
+---
+
+## Versionamento
+
+O projeto segue o **SemVer** (`MAJOR.MINOR.PATCH`). A versão aparece no cabeçalho da aplicação (`PO.versao` em `js/core/namespace.js`) e no arquivo `VERSION`. Os dois devem ser atualizados juntos, com uma entrada no `CHANGELOG.md`.

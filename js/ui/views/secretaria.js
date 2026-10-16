@@ -11,11 +11,16 @@
  *   - Histórico de ajustes: trilha de auditoria (somente leitura) das
  *     inclusões/alterações/anulações da UO, com valor antes/depois e motivo.
  *
- * A coluna "Valor insuficiente" (coluna H do cronograma) traz total − meses
- * e o indicador Negativo (vermelho) / Atende (azul) / Positivo (verde).
- *
- * No período "Mensal" a tabela usa o modo compacto (classificação empilhada
- * em uma coluna, valores sem "R$") para exibir as 12 colunas sem rolagem.
+ * Em todos os períodos há duas visões (alternador acima da tabela), ambas com
+ * UE, Funcional, Natureza, Descrição, Fonte e Total orçamento:
+ *   - Resumo (padrão): clicar na linha abre o painel com a distribuição no
+ *     período (indicadores, barras e subtotais: trimestres no Mensal,
+ *     semestres no Bimestral/Trimestral; no Anual, os 12 meses como referência);
+ *   - Grade completa: uma coluna por período em mapa de calor, zeros como "—"
+ *     (abreviados no Mensal). Não existe no Anual (seria uma única coluna).
+ * Nas duas, a coluna "Situação" traz a diferença total − diluído (coluna H do
+ * cronograma) com semáforo verde (Atende) / amarelo (Falta diluir) /
+ * vermelho (Excede); ela substitui a coluna "Valor insuficiente".
  */
 (function (PO) {
   'use strict';
@@ -77,36 +82,6 @@
     });
   }
 
-  /** Selos de situação (diluição + origem do registro). */
-  function situacao(r) {
-    var selos = [];
-    if (!r.diluida) {
-      selos.push(c.selo('Não diluída', 'alerta'));
-    } else if (r.divergenciaCentavos !== 0) {
-      selos.push(c.selo('Divergente', 'erro'));
-    } else {
-      selos.push(c.selo('OK', 'ok'));
-    }
-    if (r.origem === 'manual') {
-      selos.push(c.selo('Manual', 'neutro'));
-    } else if (r.alterada) {
-      selos.push(c.selo('Alterada', 'neutro'));
-    }
-    return h('span', { className: 'badge-stack' }, selos);
-  }
-
-  /**
-   * Célula da coluna H "Valor insuficiente" (total − soma dos meses): valor em
-   * cima e indicador Negativo/Atende/Positivo embaixo (domain/valor-insuficiente.js).
-   */
-  function celulaValorInsuficiente(r, fmt) {
-    var calc = PO.domain.valorInsuficiente.calcular(r);
-    return h('span', { className: 'cell-stack cell-stack--num', testid: 'celula-valor-insuficiente' }, [
-      h('span', { text: fmt(calc.saldoCentavos) }),
-      c.seloValorInsuficiente(calc)
-    ]);
-  }
-
   /** Botões de ação da linha (ícone + rótulo acessível). */
   function acoes(r, aoAlterar, aoExcluir) {
     var id = texto.slug(r.chave);
@@ -116,76 +91,255 @@
     ]);
   }
 
-  /** Célula empilhada de classificação (modo compacto). */
-  function celulaClassificacao(r) {
-    return h('span', { className: 'cell-stack' }, [
-      h('span', { className: 'cell-stack__main', text: r.natureza + ' · F' + (r.fonte || '?') }),
-      h('span', { className: 'cell-stack__sub', text: r.ue }),
-      h('span', { className: 'cell-stack__sub', text: r.funcional })
+  /** Valor sem "R$" (a legenda da tabela informa a unidade). */
+  function semSimbolo(v) {
+    return dinheiro.formatar(v, { simbolo: false });
+  }
+
+  /** Valor abreviado (grade mensal e rótulos do painel): "287,5 mil", "3,41 mi", "600". */
+  function abreviar(centavos) {
+    var reais = centavos / 100;
+    var abs = Math.abs(reais);
+    if (abs >= 1e6) {
+      return (reais / 1e6).toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + ' mi';
+    }
+    if (abs >= 1e3) {
+      return (reais / 1e3).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' mil';
+    }
+    return reais.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
+
+  /**
+   * Semáforo da Situação (diferença = total − diluído nos meses):
+   * verde "Atende" (0), amarelo "Falta diluir" (> 0), vermelho "Excede" (< 0).
+   */
+  var SEMAFORO = Object.freeze({
+    atende: { rotulo: 'Atende', cor: 'verde' },
+    positivo: { rotulo: 'Falta diluir', cor: 'amarelo' },
+    negativo: { rotulo: 'Excede', cor: 'vermelho' }
+  });
+
+  /** Indicador: bolinha + valor da diferença + rótulo. */
+  function semaforo(saldoCentavos) {
+    var s = SEMAFORO[saldoCentavos === 0 ? 'atende' : saldoCentavos > 0 ? 'positivo' : 'negativo'];
+    return h('span', { className: 'semaforo semaforo--' + s.cor }, [
+      h('span', { className: 'semaforo__luz', attrs: { 'aria-hidden': 'true' } }),
+      h('span', { className: 'semaforo__valor', text: semSimbolo(saldoCentavos) }),
+      h('span', { className: 'semaforo__rotulo', text: s.rotulo })
     ]);
   }
 
   /**
-   * Modo "semestres empilhados": 12 valores em 6 colunas (Jan/Jul, Fev/Ago…),
-   * cada célula com 2 linhas. Usado quando 12 colunas não cabem na largura.
+   * Situação: semáforo com a diferença entre o total do orçamento e o
+   * valor diluído, mais os selos "Não diluída" e de origem (Manual/Alterada).
    */
-  function empilharSemestres(valores, fmt) {
-    var colunas = [];
-    for (var i = 0; i < 6; i += 1) {
-      colunas.push(h('span', { className: 'cell-stack cell-stack--num' }, [
-        h('span', { text: fmt(valores[i]) }),
-        h('span', { className: 'cell-stack__sub', text: fmt(valores[i + 6]) })
-      ]));
+  function situacaoUnificada(r) {
+    var calc = PO.domain.valorInsuficiente.calcular(r);
+    var itens = [semaforo(calc.saldoCentavos)];
+    if (!r.diluida) {
+      itens.push(c.selo('Não diluída', 'alerta'));
     }
-    return colunas;
+    if (r.origem === 'manual') {
+      itens.push(c.selo('Manual', 'neutro'));
+    } else if (r.alterada) {
+      itens.push(c.selo('Alterada', 'neutro'));
+    }
+    return h('span', { className: 'badge-stack', testid: 'celula-situacao' }, itens);
+  }
+
+  /** Cartão de indicador do painel de distribuição. */
+  function indicador(rotulo, valor) {
+    return h('div', { className: 'dist-kpi' }, [
+      h('span', { className: 'dist-kpi__label', text: rotulo }),
+      h('span', { className: 'dist-kpi__value' }, valor)
+    ]);
   }
 
   /**
-   * Tabela de dotações no período escolhido.
-   * @param {Array} registros
-   * @param {string} chavePeriodo
-   * @param {{aoAlterar:Function, aoExcluir:Function}} manipuladores
-   * @param {boolean} [semestral] Mensal em 6 colunas de 2 linhas (telas estreitas)
+   * Gráfico de barras com o valor sobre cada barra (exato no tooltip).
+   * @param {number[]} valores centavos
+   * @param {string[]} rotulos
+   * @param {{abreviar?:boolean, referencia?:boolean}} [opcoes] referencia: barras esmaecidas (Anual)
    */
-  function tabelaDotacoes(registros, chavePeriodo, manipuladores, semestral) {
-    var compacta = chavePeriodo === 'mensal';
-    var empilhar = compacta && semestral;
-    var fmt = compacta ? function (v) { return dinheiro.formatar(v, { simbolo: false }); } : c.moeda;
-    var rotulos = periodos.rotulos(chavePeriodo);
-    var colunasPeriodo = empilhar
-      ? rotulos.slice(0, 6).map(function (r, i) { return { titulo: r + ' / ' + rotulos[i + 6], numerica: true }; })
-      : rotulos.map(function (r) { return { titulo: r, numerica: true }; });
-    var celulasPeriodo = empilhar ? function (v) { return empilharSemestres(v, fmt); } : function (v) { return v.map(fmt); };
-    var colunaH = { titulo: compacta ? 'Valor insuf.' : 'Valor insuficiente', numerica: true };
-    var colunasFixas = compacta
-      ? [{ titulo: 'Classificação' }, { titulo: 'Descrição' }, { titulo: 'Total', numerica: true }, colunaH]
-      : [{ titulo: 'U. Executora' }, { titulo: 'Funcional' }, { titulo: 'Natureza' }, { titulo: 'Descrição' }, { titulo: 'Fonte' }, { titulo: 'Total', numerica: true }, colunaH];
-    var colunas = colunasFixas.concat(colunasPeriodo).concat([{ titulo: 'Situação' }, { titulo: 'Ações' }]);
+  function graficoBarras(valores, rotulos, opcoes) {
+    var o = opcoes || {};
+    var maximo = Math.max.apply(null, valores.map(Math.abs)) || 1;
+    var colunas = 'grid-template-columns:repeat(' + valores.length + ', minmax(0, 1fr))';
+    var largura = valores.length > 6 ? 'dist--estreito' : 'dist--largo';
+    return [
+      h('div', { className: 'dist__chart ' + largura + (o.referencia ? ' dist__chart--ref' : ''), attrs: { style: colunas, role: 'img', 'aria-label': 'Distribuição: ' + valores.map(function (v, i) { return rotulos[i] + ' ' + semSimbolo(v); }).join('; ') } },
+        valores.map(function (v, i) {
+          var altura = v ? Math.max(4, Math.round(Math.abs(v) / maximo * 80)) : 2;
+          return h('div', { className: 'dist__col', attrs: { title: rotulos[i] + ': R$ ' + semSimbolo(v) } }, [
+            h('span', { className: 'dist__val', text: v ? (o.abreviar ? abreviar(v) : semSimbolo(v)) : '—' }),
+            h('span', { className: 'dist__bar' + (v ? '' : ' dist__bar--zero') + (v < 0 ? ' dist__bar--neg' : ''), attrs: { style: 'height:' + altura + '%' } })
+          ]);
+        })),
+      h('div', { className: 'dist__axis', attrs: { style: colunas, 'aria-hidden': 'true' } }, rotulos.map(function (m) { return h('span', { text: m }); }))
+    ];
+  }
 
-    var linhas = registros.map(function (r) {
-      var valores = periodos.agregar(periodos.mesesEfetivos(r), chavePeriodo);
-      var fixas = compacta
-        ? [celulaClassificacao(r), h('span', { className: 'cell-desc', text: r.descricao }), fmt(r.totalCentavos)]
-        : [r.ue, r.funcional, r.natureza, r.descricao, r.fonte, fmt(r.totalCentavos)];
-      return fixas.concat([celulaValorInsuficiente(r, fmt)]).concat(celulasPeriodo(valores))
-        .concat([situacao(r), acoes(r, manipuladores.aoAlterar, manipuladores.aoExcluir)]);
+  /** Faixa de subtotais (trimestres no Mensal, semestres no Bimestral/Trimestral). */
+  function faixaSubtotais(itens, abreviado) {
+    return h('div', { className: 'dist__quarters', attrs: { style: 'grid-template-columns:repeat(' + itens.length + ', minmax(0, 1fr))' } }, itens.map(function (it) {
+      return h('span', { className: 'dist__quarter' }, [it.rotulo + ' · ', h('strong', { text: abreviado ? abreviar(it.valor) : semSimbolo(it.valor), attrs: { title: semSimbolo(it.valor) } })]);
+    }));
+  }
+
+  /**
+   * Painel expandido da linha no período escolhido: indicadores (total,
+   * diluído, situação, períodos com valor), barras por período e subtotais.
+   *   - Mensal: 12 meses + trimestres;
+   *   - Bimestral/Trimestral: barras do período + semestres;
+   *   - Quadrimestral: só as barras;
+   *   - Anual: os 12 meses como referência (barras esmaecidas).
+   */
+  function painelDistribuicao(r, meses, chavePeriodo) {
+    var mensal = chavePeriodo === 'mensal';
+    var anual = chavePeriodo === 'anual';
+    var valores = anual || mensal ? meses : periodos.agregar(meses, chavePeriodo);
+    var rotulos = anual ? periodos.rotulos('mensal') : periodos.rotulos(chavePeriodo);
+    var diluido = dinheiro.somar(meses);
+    var saldo = PO.domain.valorInsuficiente.calcular(r).saldoCentavos;
+    var comValor = valores.filter(function (v) { return v !== 0; }).length;
+    var media = comValor ? Math.round(diluido / comValor) : 0;
+    var rotuloContagem = mensal || anual ? 'Meses com valor' : 'Períodos com valor';
+
+    var partes = [
+      h('div', { className: 'dist__kpis' }, [
+        indicador('Total orçamento', semSimbolo(r.totalCentavos)),
+        indicador(mensal ? 'Diluído Jan–Dez' : 'Diluído no ano', semSimbolo(diluido)),
+        indicador('Situação', semaforo(saldo)),
+        indicador(rotuloContagem, comValor + ' de ' + valores.length + ' · média ' + abreviar(media))
+      ])
+    ];
+    if (anual) {
+      partes.push(h('p', { className: 'dist__note', text: 'Referência mensal (o período Anual tem uma única coluna).' }));
+    }
+    partes = partes.concat(graficoBarras(valores, rotulos, { abreviar: mensal || anual, referencia: anual }));
+    if (mensal) {
+      partes.push(faixaSubtotais([0, 1, 2, 3].map(function (t) {
+        return { rotulo: 'T' + (t + 1), valor: dinheiro.somar(meses.slice(t * 3, t * 3 + 3)) };
+      }), true));
+    } else if (chavePeriodo === 'bimestral' || chavePeriodo === 'trimestral') {
+      partes.push(faixaSubtotais([
+        { rotulo: '1º semestre', valor: dinheiro.somar(meses.slice(0, 6)) },
+        { rotulo: '2º semestre', valor: dinheiro.somar(meses.slice(6)) }
+      ], false));
+    }
+    return h('div', { className: 'dist' }, partes);
+  }
+
+  /** Colunas de identificação comuns às visões. */
+  var COLUNAS_ID = ['UE', 'Funcional', 'Natureza', 'Descrição', 'Fonte', 'Total orçamento'];
+
+  /** Células de identificação: UE, funcional, natureza, descrição, fonte, total. */
+  function celulasId(r) {
+    return [r.ue, r.funcional, r.natureza, h('span', { className: 'cell-desc2', text: r.descricao, attrs: { title: r.descricao } }), r.fonte,
+      h('span', { className: 'u-num', text: semSimbolo(r.totalCentavos) })];
+  }
+
+  /**
+   * Visão "Resumo" (padrão, todos os períodos): uma linha por dotação; clicar
+   * na linha abre o painel com a distribuição no período. `expandidas` (Set de
+   * chaves) preserva o estado entre redesenhos.
+   */
+  function tabelaResumo(registros, chavePeriodo, manipuladores, expandidas) {
+    var nColunas = COLUNAS_ID.length + 3;
+    var linhas = [];
+    registros.forEach(function (r) {
+      var id = texto.slug(r.chave);
+      var meses = periodos.mesesEfetivos(r);
+      var aberta = expandidas.has(r.chave);
+      var detalhe = h('tr', { className: 'resumo-detalhe', testid: 'detalhe-dotacao-' + id, attrs: { hidden: !aberta } },
+        h('td', { className: 'data-table__td', attrs: { colspan: nColunas } }, aberta ? painelDistribuicao(r, meses, chavePeriodo) : null));
+      var botao = h('button', {
+        className: 'btn-expand', text: '▸', testid: 'btn-expandir-dotacao-' + id,
+        attrs: { type: 'button', 'aria-expanded': aberta ? 'true' : 'false', 'aria-label': 'Ver distribuição de ' + r.natureza + ' ' + r.descricao }
+      });
+      var linha;
+      function alternar() {
+        var abrir = detalhe.hidden;
+        if (abrir && !detalhe.firstChild.firstChild) {
+          detalhe.firstChild.appendChild(painelDistribuicao(r, meses, chavePeriodo));
+        }
+        detalhe.hidden = !abrir;
+        linha.classList.toggle('is-open', abrir);
+        botao.setAttribute('aria-expanded', abrir ? 'true' : 'false');
+        if (abrir) { expandidas.add(r.chave); } else { expandidas.delete(r.chave); }
+      }
+      linha = h('tr', {
+        className: 'data-table__row resumo-linha' + (aberta ? ' is-open' : ''),
+        on: { click: function (e) { if (!e.target.closest('.row-actions')) { alternar(); } } }
+      }, [h('td', { className: 'data-table__td resumo-linha__toggle' }, botao)]
+        .concat(celulasId(r).map(function (cel) { return h('td', { className: 'data-table__td' }, cel); }))
+        .concat([
+          h('td', { className: 'data-table__td' }, situacaoUnificada(r)),
+          h('td', { className: 'data-table__td' }, acoes(r, manipuladores.aoAlterar, manipuladores.aoExcluir))
+        ]));
+      linhas.push(linha, detalhe);
     });
 
-    var somaPeriodos = periodos.agregar(periodos.somarMeses(registros), chavePeriodo);
-    var total = dinheiro.somar(registros.map(function (r) { return r.totalCentavos; }));
-    var saldoH = PO.domain.valorInsuficiente.resumir(registros).saldoCentavos;
-    var vazias = compacta ? ['', 'Total (' + registros.length + ')'] : ['', '', '', 'Total (' + registros.length + ')', ''];
-    var rodape = vazias.concat([fmt(total), fmt(saldoH)]).concat(celulasPeriodo(somaPeriodos)).concat(['', '']);
+    var corpo = linhas.length ? linhas : [h('tr', null, h('td', { className: 'data-table__empty', text: 'Nenhuma dotação atende aos filtros.', attrs: { colspan: nColunas } }))];
+    var titulos = [''].concat(COLUNAS_ID).concat(['Situação', 'Ações']);
 
-    return c.tabela({
+    return h('div', { className: 'data-table data-table--mensal data-table--resumo', attrs: { role: 'region', 'aria-label': 'Dotações da unidade orçamentária (valores em R$)', tabindex: '0' } },
+      h('table', { className: 'data-table__table', testid: 'tabela-dotacoes' }, [
+        h('caption', { className: 'u-visually-hidden', text: 'Dotações da unidade orçamentária (valores em R$). Clique numa linha para ver a distribuição no período.' }),
+        h('thead', null, h('tr', null, titulos.map(function (t, i) {
+          return h('th', { className: 'data-table__th' + (i === 0 ? ' resumo-linha__toggle' : ''), text: t, attrs: { scope: 'col' } });
+        }))),
+        h('tbody', null, corpo)
+      ]));
+  }
+
+  /** Célula da grade: "—" no zero, tom pelo peso do período na dotação. */
+  function celulaCalor(v, maximo, rotulo, abreviado) {
+    if (!v) {
+      return h('span', { className: 'heat heat--zero', text: '—', attrs: { title: rotulo + ': 0,00' } });
+    }
+    var tom = Math.round(6 + 26 * Math.abs(v) / maximo);
+    return h('span', {
+      className: 'heat' + (v < 0 ? ' heat--neg' : ''), text: abreviado ? abreviar(v) : semSimbolo(v),
+      attrs: { title: rotulo + ': ' + semSimbolo(v), style: '--tom:' + tom + '%' }
+    });
+  }
+
+  /**
+   * Visão "Grade completa": identificação + uma coluna por período em mapa de
+   * calor + situação. No Mensal os valores são abreviados (12 colunas); nos
+   * demais períodos aparecem por extenso.
+   */
+  function tabelaGrade(registros, chavePeriodo, manipuladores) {
+    var abreviado = chavePeriodo === 'mensal';
+    var rotulos = periodos.rotulos(chavePeriodo);
+    var colunas = COLUNAS_ID.map(function (t) { return { titulo: t }; })
+      .concat(rotulos.map(function (r) { return { titulo: r }; }))
+      .concat([{ titulo: 'Situação' }, { titulo: 'Ações' }]);
+    var linhas = registros.map(function (r) {
+      var valores = periodos.agregar(periodos.mesesEfetivos(r), chavePeriodo);
+      var maximo = Math.max.apply(null, valores.map(Math.abs)) || 1;
+      return celulasId(r)
+        .concat(valores.map(function (v, i) { return celulaCalor(v, maximo, rotulos[i], abreviado); }))
+        .concat([situacaoUnificada(r), acoes(r, manipuladores.aoAlterar, manipuladores.aoExcluir)]);
+    });
+    var soma = periodos.agregar(periodos.somarMeses(registros), chavePeriodo);
+    var total = dinheiro.somar(registros.map(function (r) { return r.totalCentavos; }));
+    var rodape = ['', '', '', 'Total (' + registros.length + ')', '', semSimbolo(total)]
+      .concat(soma.map(function (v, i) {
+        return h('span', { text: v ? (abreviado ? abreviar(v) : semSimbolo(v)) : '—', attrs: { title: rotulos[i] + ': ' + semSimbolo(v) } });
+      }))
+      .concat(['', '']);
+    var tabela = c.tabela({
       colunas: colunas,
       linhas: linhas,
       rodape: rodape,
-      legenda: 'Dotações da unidade orçamentária' + (compacta ? ' (valores em R$)' : '') + (empilhar ? ' — meses em pares: 1º semestre na linha de cima, 2º semestre na de baixo' : ''),
+      legenda: 'Dotações da unidade orçamentária — grade por período (valores em R$' + (abreviado ? '; meses abreviados, valor exato no tooltip' : '') + ')',
       testid: 'tabela-dotacoes',
-      vazio: 'Nenhuma dotação atende aos filtros.',
-      compacta: compacta
+      vazio: 'Nenhuma dotação atende aos filtros.'
     });
+    tabela.classList.add('data-table--mensal', 'data-table--grade');
+    return tabela;
   }
 
   /** "antes → depois" quando o valor mudou; senão o valor vigente (ou "—"). */
@@ -357,32 +511,51 @@
       }
 
       /**
-       * Desenha a tabela. No Mensal, tenta 12 colunas; se não couberem na
-       * largura disponível, redesenha com os semestres empilhados (6 colunas
-       * × 2 linhas) — todas as informações continuam visíveis, sem rolagem.
+       * Visão "Resumo" (padrão — painel de distribuição ao clicar na linha) ou
+       * "Grade completa" (uma coluna por período em mapa de calor), em todos os
+       * períodos. No Anual só há o Resumo (a grade teria uma única coluna).
+       * A escolha fica lembrada neste navegador.
        */
-      var larguraDesenhada = 0;
-      function desenharTabela() {
-        var mensal = ctrl.periodo.value === 'mensal';
-        PO.core.dom.limpar(alvoTabela);
-        alvoTabela.appendChild(tabelaDotacoes(filtrados, ctrl.periodo.value, manipuladores, false));
-        larguraDesenhada = alvoTabela.clientWidth;
-        var regiao = alvoTabela.firstChild;
-        if (mensal && regiao.scrollWidth > regiao.clientWidth + 1) {
-          PO.core.dom.limpar(alvoTabela);
-          alvoTabela.appendChild(h('p', { className: 'table-note', testid: 'txt-mensal-semestres', text: 'Meses exibidos em pares para caber na tela: linha de cima = Jan–Jun, linha de baixo = Jul–Dez. Em telas mais largas (ou com o menu ☰ recolhido) os 12 meses ficam lado a lado.' }));
-          alvoTabela.appendChild(tabelaDotacoes(filtrados, ctrl.periodo.value, manipuladores, true));
-        }
+      var CHAVE_VISAO = 'po.secretaria.visaoMensal';
+      var visaoMensal = 'resumo';
+      try { visaoMensal = localStorage.getItem(CHAVE_VISAO) === 'grade' ? 'grade' : 'resumo'; } catch (e) { /* sem storage: usa o padrão */ }
+      var expandidas = new Set();
+      var alvoVisao = h('div', { className: 'view-switch-bar' });
+
+      function botaoVisao(chave, rotulo, testid) {
+        return h('button', {
+          className: 'view-switch__btn', text: rotulo, testid: testid,
+          attrs: { type: 'button', 'aria-pressed': visaoMensal === chave ? 'true' : 'false' },
+          on: { click: function () {
+            visaoMensal = chave;
+            try { localStorage.setItem(CHAVE_VISAO, chave); } catch (e) { /* ignora */ }
+            desenharTabela();
+          } }
+        });
       }
 
-      // Reavalia o layout quando a largura muda (janela, menu recolhido, troca de aba).
-      if (window.ResizeObserver) {
-        new ResizeObserver(function () {
-          var largura = alvoTabela.clientWidth;
-          if (alvoTabela.isConnected && largura > 0 && Math.abs(largura - larguraDesenhada) > 8) {
-            desenharTabela();
-          }
-        }).observe(alvoTabela);
+      function desenharTabela() {
+        var chave = ctrl.periodo.value;
+        var anual = chave === 'anual';
+        var visao = anual ? 'resumo' : visaoMensal;
+        var dica = visao === 'resumo'
+          ? (chave === 'mensal' ? 'Clique numa linha para ver a distribuição Jan–Dez.' : 'Clique numa linha para ver a distribuição no período.') + ' Valores em R$.'
+          : (chave === 'mensal'
+            ? 'Valores em R$; meses abreviados (valor exato ao passar o mouse), zeros como "—" e o tom indica o peso do mês na dotação.'
+            : 'Valores em R$; zeros como "—" e o tom indica o peso do período na dotação.');
+        PO.core.dom.limpar(alvoTabela);
+        PO.core.dom.limpar(alvoVisao);
+        PO.core.dom.anexar(alvoVisao, [
+          anual ? null : h('span', { className: 'view-switch', attrs: { role: 'group', 'aria-label': 'Visão da tabela de dotações' } }, [
+            botaoVisao('resumo', 'Resumo', 'btn-visao-resumo'),
+            botaoVisao('grade', 'Grade completa', 'btn-visao-grade')
+          ]),
+          h('span', { className: 'table-note', testid: 'txt-visao-mensal', text: dica })
+        ]);
+        alvoTabela.appendChild(alvoVisao);
+        alvoTabela.appendChild(visao === 'resumo'
+          ? tabelaResumo(filtrados, chave, manipuladores, expandidas)
+          : tabelaGrade(filtrados, chave, manipuladores));
       }
 
       function limparFiltros() {
