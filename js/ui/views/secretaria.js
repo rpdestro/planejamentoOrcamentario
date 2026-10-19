@@ -156,25 +156,36 @@
   }
 
   /**
-   * Gráfico de barras com o valor sobre cada barra (exato no tooltip).
+   * Gráfico de barras com o valor sobre cada barra (exato na caixa de dica,
+   * com o % sobre o total da dotação).
    * @param {number[]} valores centavos
    * @param {string[]} rotulos
-   * @param {{abreviar?:boolean, referencia?:boolean}} [opcoes] referencia: barras esmaecidas (Anual)
+   * @param {{abreviar?:boolean, referencia?:boolean, total:number}} opcoes referencia: barras esmaecidas (Anual)
    */
   function graficoBarras(valores, rotulos, opcoes) {
     var o = opcoes || {};
     var maximo = Math.max.apply(null, valores.map(Math.abs)) || 1;
     var colunas = 'grid-template-columns:repeat(' + valores.length + ', minmax(0, 1fr))';
     var largura = valores.length > 6 ? 'dist--estreito' : 'dist--largo';
+    var grafico = h('div', { className: 'dist__chart ' + largura + (o.referencia ? ' dist__chart--ref' : ''), attrs: { style: colunas, role: 'group', 'aria-label': 'Distribuição por período' } });
+    valores.forEach(function (v, i) {
+      var altura = v ? Math.max(4, Math.round(Math.abs(v) / maximo * 80)) : 2;
+      var barra = h('span', { className: 'dist__bar' + (v ? '' : ' dist__bar--zero') + (v < 0 ? ' dist__bar--neg' : ''), attrs: { style: 'height:' + altura + '%' } });
+      var coluna = h('div', { className: 'dist__col', attrs: { tabindex: 0, role: 'img', 'aria-label': rotulos[i] + ': R$ ' + semSimbolo(v) } }, [
+        h('span', { className: 'dist__val', text: v ? (o.abreviar ? abreviar(v) : semSimbolo(v)) : '—' }),
+        barra
+      ]);
+      PO.ui.graficos.registrarDica({
+        alvo: coluna, focavel: coluna, ancora: barra, grupo: grafico,
+        info: {
+          rotulo: rotulos[i], valor: v, total: o.total, contexto: 'Total da dotação: ' + c.moeda(o.total),
+          cor: v < 0 ? 'var(--cor-erro)' : (v ? 'var(--cor-primaria)' : 'var(--cor-borda-forte)')
+        }
+      });
+      grafico.appendChild(coluna);
+    });
     return [
-      h('div', { className: 'dist__chart ' + largura + (o.referencia ? ' dist__chart--ref' : ''), attrs: { style: colunas, role: 'img', 'aria-label': 'Distribuição: ' + valores.map(function (v, i) { return rotulos[i] + ' ' + semSimbolo(v); }).join('; ') } },
-        valores.map(function (v, i) {
-          var altura = v ? Math.max(4, Math.round(Math.abs(v) / maximo * 80)) : 2;
-          return h('div', { className: 'dist__col', attrs: { title: rotulos[i] + ': R$ ' + semSimbolo(v) } }, [
-            h('span', { className: 'dist__val', text: v ? (o.abreviar ? abreviar(v) : semSimbolo(v)) : '—' }),
-            h('span', { className: 'dist__bar' + (v ? '' : ' dist__bar--zero') + (v < 0 ? ' dist__bar--neg' : ''), attrs: { style: 'height:' + altura + '%' } })
-          ]);
-        })),
+      grafico,
       h('div', { className: 'dist__axis', attrs: { style: colunas, 'aria-hidden': 'true' } }, rotulos.map(function (m) { return h('span', { text: m }); }))
     ];
   }
@@ -216,7 +227,7 @@
     if (anual) {
       partes.push(h('p', { className: 'dist__note', text: 'Referência mensal (o período Anual tem uma única coluna).' }));
     }
-    partes = partes.concat(graficoBarras(valores, rotulos, { abreviar: mensal || anual, referencia: anual }));
+    partes = partes.concat(graficoBarras(valores, rotulos, { abreviar: mensal || anual, referencia: anual, total: r.totalCentavos }));
     if (mensal) {
       partes.push(faixaSubtotais([0, 1, 2, 3].map(function (t) {
         return { rotulo: 'T' + (t + 1), valor: dinheiro.somar(meses.slice(t * 3, t * 3 + 3)) };

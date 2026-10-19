@@ -250,6 +250,149 @@
   color: var(--cor-texto-suave);
 }
 
+/* Destaque do item sob a caixa de dica: os demais do gráfico esmaecem */
+.stack-chart__segment,
+.bar-chart__row > * {
+  transition: opacity 0.15s ease;
+}
+
+.stack-chart__bar.is-destacando .stack-chart__segment:not(.is-ativo),
+.bar-chart.is-destacando .bar-chart__row:not(.is-ativo) > * {
+  opacity: 0.4;
+}
+
+.bar-chart__row.is-ativo .bar-chart__label,
+.bar-chart__row.is-ativo .bar-chart__value {
+  color: var(--cor-destaque-texto-forte);
+  font-weight: 600;
+}
+
+.stack-chart__segment:focus-visible,
+.bar-chart__track:focus-visible {
+  outline: 2px solid var(--cor-destaque-texto);
+  outline-offset: -2px;
+  border-radius: 3px;
+}
+
+/* Caixa de dica (tooltip) dos gráficos */
+.chart-tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: var(--esp-1);
+  min-width: 13rem;
+  max-width: min(22rem, calc(100vw - 1rem));
+  padding: var(--esp-3) var(--esp-4);
+  border: 1px solid var(--cor-borda-forte);
+  border-radius: 10px;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  box-shadow: var(--sombra-flutuante);
+  font-size: var(--texto-sm);
+  line-height: 1.35;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(2px);
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0s linear 0.12s;
+}
+
+.chart-tooltip.is-visivel {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.12s ease, transform 0.12s ease, visibility 0s;
+}
+
+/* Seta: quadrado girado com a mesma borda, apontando para o item */
+.chart-tooltip::after {
+  content: "";
+  position: absolute;
+  left: var(--seta-x, 50%);
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-right: 1px solid var(--cor-borda-forte);
+  border-bottom: 1px solid var(--cor-borda-forte);
+  background: var(--cor-superficie);
+  transform: rotate(45deg);
+}
+
+.chart-tooltip--abaixo::after {
+  top: -6px;
+  bottom: auto;
+  transform: rotate(225deg);
+}
+
+.chart-tooltip__name {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+  color: var(--cor-texto-suave);
+}
+
+.chart-tooltip__dot {
+  flex-shrink: 0;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 50%;
+}
+
+.chart-tooltip__value {
+  font-size: var(--texto-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-tooltip__meter {
+  display: flex;
+  align-items: center;
+  gap: var(--esp-2);
+}
+
+.chart-tooltip__meter-track {
+  flex: 1;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--cor-neutro-fundo);
+}
+
+.chart-tooltip__meter-fill {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: 3px;
+}
+
+.chart-tooltip__percent {
+  font-size: var(--texto-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--cor-texto-suave);
+}
+
+.chart-tooltip__context {
+  margin-top: var(--esp-1);
+  padding-top: var(--esp-1);
+  border-top: 1px solid var(--cor-borda);
+  font-size: var(--texto-xs);
+  color: var(--cor-texto-suave);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chart-tooltip,
+  .chart-tooltip.is-visivel,
+  .stack-chart__segment,
+  .bar-chart__row > * {
+    transition: none;
+  }
+}
+
 @media (max-width: 860px) {
   .chart-grid {
     grid-template-columns: minmax(0, 1fr);

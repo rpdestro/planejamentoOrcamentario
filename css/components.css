@@ -715,8 +715,35 @@
   transition: opacity 0.12s;
 }
 
-.dist__col:hover .dist__bar {
+.dist__col {
+  transition: opacity 0.15s ease;
+}
+
+.dist__col:hover .dist__bar,
+.dist__col.is-ativo .dist__bar {
   opacity: 1;
+}
+
+/* Destaque do período sob a caixa de dica: os demais esmaecem */
+.dist__chart.is-destacando .dist__col:not(.is-ativo) {
+  opacity: 0.4;
+}
+
+.dist__col.is-ativo .dist__val {
+  color: var(--cor-destaque-texto-forte);
+  font-weight: 600;
+}
+
+.dist__col:focus-visible {
+  outline: 2px solid var(--cor-destaque-texto);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dist__col {
+    transition: none;
+  }
 }
 
 .dist__bar--zero {
